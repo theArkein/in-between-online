@@ -7,7 +7,7 @@ compatibility_date = "2025-01-01"
 [vars]
 # Which websites may create rooms and connect. Use your GitHub Pages address.
 # Use "*" only while testing.
-ALLOWED_ORIGINS = "https://inbetween.saradsingh.com.np"
+ALLOWED_ORIGINS = "https://inbetween.saradsingh.com.np,http://inbetween.saradsingh.com.np"
 
 [[durable_objects.bindings]]
 name = "ROOM"
