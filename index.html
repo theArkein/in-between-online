@@ -345,6 +345,58 @@ html.xxshort .ibtn { width: 40px; height: 40px; }
 .install .acts { display: flex; gap: 8px; width: 100%; }
 .install .acts button { flex: 1; min-height: 46px; border-radius: 12px; font-weight: 700; border: 1px solid rgba(255, 255, 255, .22); background: transparent; color: inherit; }
 .install .acts .go { background: #e8c15c; border-color: #e8c15c; color: #1a1a10; }
+/* ---------- waiting lounge: two tidy columns that always fit ---------- */
+.lobhead, .lobhead > *, .coderow > *, .linkrow > * { min-width: 0; }
+.coderow { gap: 8px; }
+.roomcode { font-size: clamp(26px, calc(var(--vw, 1vw) * 4.8), 46px); letter-spacing: .08em; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+html.land .lobby { max-width: 980px; gap: 8px 18px; padding: 10px 14px; align-content: center; }
+html.land .lobby > .sform { gap: 6px; }
+html.land .lobhead { gap: 6px; }
+html.land .lobhead .lbl { margin-bottom: 0; }
+html.land .coderow .btn, html.land .linkrow .btn { min-height: 38px; padding: 4px 10px; font-size: 14px; gap: 4px; display: inline-flex; align-items: center; justify-content: center; }
+html.land .linkrow .textin { min-height: 38px; padding: 4px 10px; flex: 1 1 0; }
+html.land .lobfoot { flex-wrap: wrap; gap: 6px; }
+html.land .lobfoot .btn { min-height: 40px; }
+html.land .lobfoot .btn.primary { flex: 1 1 100% !important; }
+html.land .lobfoot .btn:not(.primary) { flex: 1 1 0; padding: 4px 8px; font-size: 14px; }
+html.land .lobfoot .c-sub { flex: 1 1 100%; margin: 0; }
+html.land .pgrid { gap: 5px; }
+html.land .pchip.lob { height: 34px; gap: 5px; padding: 0 8px 0 4px; }
+html.land .pchip.lob .nm { font-size: 14px; }
+html.land .pchip .tag { font-size: 9px; padding: 0 5px; }
+html.land .seatno { width: 20px; height: 20px; font-size: 11px; }
+html.land .dot { width: 8px; height: 8px; }
+html.land .lobby .stepper { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+html.land .lobby .stepper .btn, html.land .lobby .bet-input { min-height: 38px; font-size: 22px; }
+html.land .setgrid { gap: 5px; }
+html.land .setbtn { min-height: 44px; padding: 2px; }
+html.land .setbtn b { font-size: 14px; }
+html.land .setbtn small { font-size: 10px; }
+html.land .lobby .notice { font-size: 13px; padding: 8px 10px; }
+html.land .lobby .lbl { font-size: 12px; margin-bottom: 2px; }
+html.land .lobby .pgmini button { min-width: 28px; height: 24px; }
+
+/* ---------- on-screen keyboard (always landscape) ---------- */
+.osk { position: fixed; inset: 0; z-index: 60; display: none; flex-direction: column; gap: 6px; padding: calc(var(--sat, 0px) + 8px) calc(var(--sar, 0px) + 10px) calc(var(--sab, 0px) + 8px) calc(var(--sal, 0px) + 10px); background: var(--panel-solid); color: var(--ink); }
+.osk.show { display: flex; }
+.osk-bar { flex: none; display: flex; align-items: center; gap: 10px; }
+.osk-field { flex: 1; min-width: 0; }
+.osk-lbl { font-size: 12px; font-weight: 600; color: var(--muted); line-height: 1.2; margin-bottom: 2px; }
+.osk-val { height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 12px; background: var(--panel2); border: 2px solid var(--accent); font-family: var(--display); font-weight: 800; font-size: 22px; white-space: pre; overflow: hidden; }
+.osk-val::after { content: ""; width: 2px; height: 1.1em; margin-left: 2px; background: var(--ink); animation: oskblink 1s steps(1) infinite; }
+.osk-val.empty { color: var(--muted); font-weight: 600; }
+@keyframes oskblink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .osk-val::after { animation: none; } }
+.osk-done { flex: none; align-self: flex-end; min-width: 96px; height: 44px; border-radius: 12px; font-weight: 800; font-size: 16px; background: var(--accent); color: var(--accent-ink); border: 0; }
+.osk-keys { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 5px; }
+.osk-row { flex: 1; min-height: 0; display: flex; gap: 5px; justify-content: center; }
+.osk-key { flex: 1 1 0; min-width: 0; padding: 0; border-radius: 9px; background: var(--panel2); border: 1px solid var(--line); font-weight: 700; font-size: clamp(15px, calc(var(--vh, 1vh) * 5), 24px); color: inherit; touch-action: manipulation; }
+.osk-key:active { background: var(--accent); color: var(--accent-ink); }
+.osk-key.wide { flex: 1.7 1 0; }
+.osk-key.space { flex: 6 1 0; }
+.osk-key.on { background: var(--accent); color: var(--accent-ink); }
+.osk.num .osk-key { font-size: clamp(20px, calc(var(--vh, 1vh) * 8), 34px); }
+
 /* ---------- game screen: the table fills the screen, the controls float on top ---------- */
 html.land { --conw: clamp(206px, calc(var(--vw, 1vw) * 27), 300px); --hudh: 56px; }
 html.land.short { --hudh: 50px; }
@@ -445,6 +497,99 @@ html.land.short .pill { padding: 2px 8px; min-width: 44px; }
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
   }
+})();
+</script>
+<script>
+/* On-screen keyboard. A phone's own keyboard follows the phone, so on a screen that is turned sideways in software
+   it would open in portrait. This one is part of the page and always opens in landscape. */
+(function () {
+  var coarse = matchMedia("(pointer: coarse)");
+  var box = document.createElement("div");
+  box.className = "osk"; box.id = "osk"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+  box.innerHTML = '<div class="osk-bar"><div class="osk-field"><div class="osk-lbl"></div><div class="osk-val" aria-live="polite"></div></div><button type="button" class="osk-done">Done</button></div><div class="osk-keys"></div>';
+  document.body.appendChild(box);
+  var lbl = box.querySelector(".osk-lbl"), val = box.querySelector(".osk-val"), keys = box.querySelector(".osk-keys");
+  var cur = null, sel = "", mode = "text", shift = true, max = 20;
+  var ROWS = { text: ["1234567890", "qwertyuiop", "asdfghjkl", "^zxcvbnm<", " "], code: ["1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm<"], num: ["12345", "67890<"] };
+
+  function field() {
+    if (cur && !cur.isConnected && sel) cur = document.querySelector(sel);
+    return cur;
+  }
+  function isField(el) { return el && el.tagName === "INPUT" && !el.readOnly && (el.type === "text" || el.type === "number") && !box.contains(el); }
+  function selectorFor(el) {
+    if (el.id) return "#" + el.id;
+    if (el.hasAttribute("data-name")) return '[data-name="' + el.getAttribute("data-name") + '"]';
+    return "";
+  }
+  function paint() {
+    var f = field(), v = f ? f.value : "";
+    val.textContent = v || (f && f.placeholder) || "";
+    val.classList.toggle("empty", !v);
+    keys.querySelectorAll("[data-k]").forEach(function (b) {
+      var k = b.getAttribute("data-k");
+      if (k.length === 1 && /[a-z]/.test(k)) b.textContent = (shift || mode === "code") ? k.toUpperCase() : k;
+      if (k === "^") b.classList.toggle("on", shift);
+    });
+  }
+  function build() {
+    keys.innerHTML = ROWS[mode].map(function (row) {
+      return '<div class="osk-row">' + row.split("").map(function (c) {
+        var cls = "osk-key", txt = c;
+        if (c === "^") { cls += " wide"; txt = "⇧"; }
+        else if (c === "<") { cls += " wide"; txt = "⌫"; }
+        else if (c === " ") { cls += " space"; txt = "space"; }
+        return '<button type="button" class="' + cls + '" data-k="' + (c === " " ? "space" : c) + '"' + (c === "<" ? ' aria-label="Backspace"' : c === "^" ? ' aria-label="Shift"' : "") + '>' + txt + '</button>';
+      }).join("") + '</div>';
+    }).join("");
+    box.classList.toggle("num", mode === "num");
+  }
+  function put(v) {
+    var f = field(); if (!f) { close(); return; }
+    f.value = v;
+    f.dispatchEvent(new Event("input", { bubbles: true }));
+    shift = mode === "code" || !v || /\s$/.test(v);
+    paint();
+  }
+  function press(k) {
+    var f = field(); if (!f) { close(); return; }
+    var v = f.value;
+    if (k === "<") { put(v.slice(0, -1)); return; }
+    if (k === "^") { shift = !shift; paint(); return; }
+    if (k === "space") { if (v && !/\s$/.test(v) && v.length < max) put(v + " "); return; }
+    if (v.length >= max) return;
+    if (mode === "code") k = k.toUpperCase();
+    else if (mode === "text" && shift) k = k.toUpperCase();
+    put(v + k);
+  }
+  function open(f) {
+    cur = f; sel = selectorFor(f);
+    mode = f.type === "number" ? "num" : f.getAttribute("data-in") === "code" ? "code" : "text";
+    max = f.maxLength > 0 ? f.maxLength : mode === "num" ? 6 : 40;
+    shift = mode === "code" || !f.value || /\s$/.test(f.value);
+    lbl.textContent = f.getAttribute("aria-label") || (f.parentNode && f.parentNode.querySelector(".lbl") && f.parentNode.querySelector(".lbl").textContent) || f.placeholder || "";
+    build(); paint();
+    box.classList.add("show");
+  }
+  function close() { box.classList.remove("show"); cur = null; sel = ""; if (document.activeElement && document.activeElement.blur && isField(document.activeElement)) document.activeElement.blur(); }
+
+  keys.addEventListener("pointerdown", function (e) {
+    var b = e.target.closest("[data-k]"); if (!b) return;
+    e.preventDefault(); press(b.getAttribute("data-k"));
+  });
+  keys.addEventListener("click", function (e) { e.preventDefault(); });
+  box.querySelector(".osk-done").addEventListener("click", close);
+  document.addEventListener("keydown", function (e) {
+    if (!box.classList.contains("show")) return;
+    if (e.key === "Enter" || e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); }
+  }, true);
+  document.addEventListener("mousedown", function (e) {
+    if (coarse.matches && isField(e.target)) { e.preventDefault(); open(e.target); }
+  }, true);
+  document.addEventListener("focusin", function (e) {
+    if (coarse.matches && isField(e.target) && !box.classList.contains("show")) { e.target.blur(); open(e.target); }
+  }, true);
+  window.__osk = { open: open, close: close };
 })();
 </script>
 <script src="vendor/three.min.js"></script>
@@ -1178,9 +1323,9 @@ import * as E from "./js/engine.js";
   function lobHead(code, link) {
     return '<div class="lobhead"><div class="lbl"><span>Room code</span></div>' +
       '<div class="coderow"><div class="roomcode" aria-label="Room code ' + esc(code.split("").join(" ")) + '">' + esc(code) + '</div>' +
-      '<button class="btn" data-act="copyCode">' + ICON.copy + ' Copy code</button></div>' +
+      '<button class="btn" data-act="copyCode" aria-label="Copy room code">' + ICON.copy + ' Copy</button></div>' +
       '<div class="linkrow"><input id="invlink" class="textin" type="text" readonly value="' + esc(link) + '" aria-label="Invite link">' +
-      '<button class="btn" data-act="copyLink">' + ICON.copy + ' Copy link</button>' +
+      '<button class="btn" data-act="copyLink" aria-label="Copy invite link">' + ICON.copy + ' Link</button>' +
       (navigator.share ? '<button class="btn" data-act="invite" aria-label="Share">' + ICON.share + '</button>' : "") + '</div></div>';
   }
 
