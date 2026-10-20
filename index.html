@@ -276,6 +276,21 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
   .lobby > .sform { grid-area: 1 / 2 / 3 / 3; align-self: center; }
   .lobfoot { grid-area: 2 / 1; align-self: start; }
 }
+/* ---------- fit and centre on every landscape screen ---------- */
+.view { inset: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
+#gameView { max-width: 1700px; margin-inline: auto; }
+#main { align-content: center; }
+@media (max-height: 430px) {
+  .setup { padding: 8px 14px; gap: 6px; }
+  .setup .seg button, .setup .btn { min-height: 36px; }
+  .setup .stepper .btn, .setup .bet-input { min-height: 36px; font-size: 22px; }
+  .setup .sform { gap: 6px; }
+  .setup .btn.primary { min-height: 42px; font-size: 16px; }
+  .setup .lbl { font-size: 12px; }
+  .lobby { padding: 8px 14px; gap: 6px; }
+  .hud { padding: 6px 10px 4px; }
+  .ibtn { width: 40px; height: 40px; }
+}
 /* ---------- landscape only ---------- */
 .rotate { position: fixed; inset: 0; z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; background: #07140e; color: #f2f7f3; }
 .rotate svg { width: 72px; height: 72px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; animation: rot 2.4s ease-in-out infinite; }
