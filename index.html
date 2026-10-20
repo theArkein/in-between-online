@@ -13,13 +13,54 @@
 <meta name="apple-mobile-web-app-title" content="In-Between">
 <title>In-Between: the card game</title>
 <meta name="description" content="In-Between, the card game of betting on the card in the middle. Play on one screen or online with friends.">
+<script>
+/* Fit the page to the screen, always as landscape. Sizes come from JS (not vh/dvh) and are re-measured after
+   every rotation, fullscreen change and browser-bar change, so nothing is left cropped or stale. A phone held
+   upright is rotated in CSS (html.rot), because iPhone browsers cannot lock the screen to landscape. */
+(function () {
+  var de = document.documentElement, coarse = matchMedia("(pointer: coarse)"), last = { iw: 0, ih: 0 };
+  function kbd() { var a = document.activeElement; return a && /^(INPUT|TEXTAREA)$/.test(a.tagName); }
+  function measure() {
+    var iw = window.innerWidth, ih = window.innerHeight;
+    if (!iw || !ih) return;
+    if (kbd() && iw === last.iw && ih < last.ih) return;          /* the on-screen keyboard only shrinks the height */
+    if (iw === last.iw && ih === last.ih && de.dataset.fit) return;
+    last.iw = iw; last.ih = ih;
+    var rot = ih > iw && coarse.matches, W = rot ? ih : iw, H = rot ? iw : ih, c = de.classList;
+    de.style.setProperty("--W", W + "px"); de.style.setProperty("--H", H + "px");
+    de.style.setProperty("--vw", (W / 100) + "px"); de.style.setProperty("--vh", (H / 100) + "px");
+    de.dataset.fit = W + "x" + H;
+    c.toggle("rot", rot); c.toggle("land", W / H >= 1.2);
+    c.toggle("narrow", W <= 430); c.toggle("short", H <= 660); c.toggle("xshort", H <= 540); c.toggle("xxshort", H <= 430);
+  }
+  function settle() { measure(); requestAnimationFrame(measure); [80, 250, 600, 1200].forEach(function (ms) { setTimeout(measure, ms); }); }
+  window.__fit = { measure: measure, settle: settle };
+  measure();
+  addEventListener("resize", settle);
+  addEventListener("orientationchange", settle);
+  addEventListener("pageshow", settle);
+  document.addEventListener("fullscreenchange", settle);
+  document.addEventListener("webkitfullscreenchange", settle);
+  if (window.visualViewport) visualViewport.addEventListener("resize", settle);
+  addEventListener("pointerdown", measure, true);
+  setInterval(measure, 1000);
+  /* Show the page only once the fonts are in, so text does not jump when they arrive. */
+  function ready() { de.classList.add("ready"); }
+  function whenFonts() {
+    if (!document.fonts || !document.fonts.load) { ready(); return; }
+    var t = setTimeout(ready, 1500);
+    Promise.all([document.fonts.load('800 20px "Bricolage Grotesque"'), document.fonts.load('600 16px "Instrument Sans"')]).then(function () { clearTimeout(t); ready(); }, ready);
+  }
+  document.addEventListener("DOMContentLoaded", whenFonts);
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --sat: env(safe-area-inset-top, 0px); --sar: env(safe-area-inset-right, 0px); --sab: env(safe-area-inset-bottom, 0px); --sal: env(safe-area-inset-left, 0px);
   --bg0: #e6efe9;
   --bg1: #c4d9cb;
   --panel: rgba(250, 253, 251, .82);
@@ -51,14 +92,17 @@
   --win: #62d79c; --lose: #ff8c7a; --focus: #7db4ff; --shadow: 0 10px 28px rgba(0, 0, 0, .45);
 }
 *, *::before, *::after { box-sizing: inherit; }
-html { height: 100%; overflow: hidden; overscroll-behavior: none; scroll-padding-top: env(safe-area-inset-top, 0px); }
-@supports (height: 100dvh) { html { height: 100dvh; } }
+html { height: 100%; overflow: hidden; overscroll-behavior: none; background: #07140e; }
+html.rot { --sat: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-right, 0px); --sal: env(safe-area-inset-bottom, 0px); }
 body {
-  height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; touch-action: manipulation;
+  position: fixed; left: 0; top: 0; width: var(--W, 100%); height: var(--H, 100%); margin: 0; overflow: hidden; overscroll-behavior: none; touch-action: manipulation;
   color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.35;
   background: var(--bg0) radial-gradient(ellipse 90% 70% at 50% 38%, var(--bg1), var(--bg0) 75%);
   -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
 }
+html.rot body { top: 100%; transform-origin: 0 0; transform: rotate(-90deg); }
+html:not(.ready) #app, html:not(.ready) #sheet { opacity: 0; }
+#app, #sheet { transition: opacity .18s ease-out; }
 [hidden] { display: none !important; }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
@@ -79,25 +123,23 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 .bank .chip { flex: none; width: 36px; height: 36px; border-radius: 50%; position: relative; background: repeating-conic-gradient(from -7.5deg, #f2eddc 0 15deg, #b8322a 15deg 30deg); box-shadow: 0 2px 4px rgba(0,0,0,.4); }
 .bank .chip::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: #0f4a36; box-shadow: inset 0 0 0 2px #f2eddc; }
 .bank small { display: block; font-size: 11px; opacity: .8; line-height: 1; }
-.bank strong { font-family: var(--display); font-size: clamp(20px, 5.4vw, 28px); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.bank strong { font-family: var(--display); font-size: clamp(20px, calc(var(--vw, 1vw) * 5.4), 28px); line-height: 1.05; font-variant-numeric: tabular-nums; }
 .spacer { flex: 1; min-width: 0; }
 .pill { display: grid; padding: 4px 10px; min-width: 50px; text-align: center; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
 .pill small { font-size: 10px; color: var(--muted); line-height: 1.2; }
 .pill b { font-family: var(--display); font-size: 16px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-@media (max-width: 430px) { .deckpill { display: none; } }
+html.narrow .deckpill { display: none; }
 
 /* ---------- main area ---------- */
 #main { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 8px; padding: 0 10px 10px; min-height: 0; }
 #stageWrap { position: relative; aspect-ratio: 7 / 5; min-height: 0; max-height: 100%; }
 #stage { position: absolute; inset: 0; }
 #stage canvas { display: block; width: 100%; height: 100%; touch-action: manipulation; }
-@media (min-aspect-ratio: 6/5) {
-  #main { grid-template-columns: minmax(0, 1fr) minmax(300px, min(380px, 34vw)); grid-template-rows: minmax(0, 1fr); }
-  #stageWrap { aspect-ratio: auto; height: 100%; }
-}
+html.land #main { grid-template-columns: minmax(0, 1fr) minmax(300px, min(380px, calc(var(--vw, 1vw) * 34))); grid-template-rows: minmax(0, 1fr); }
+html.land #stageWrap { aspect-ratio: auto; height: 100%; }
 
 #toast { position: absolute; left: 50%; top: 46%; z-index: 3; transform: translate(-50%, -40%); opacity: 0; pointer-events: none; max-width: 94%; padding: 8px 18px; border-radius: 999px; text-align: center;
-  font-family: var(--display); font-weight: 800; font-size: clamp(15px, 4.2vw, 22px); background: var(--panel-solid); color: var(--ink); border: 2px solid var(--line); box-shadow: var(--shadow); }
+  font-family: var(--display); font-weight: 800; font-size: clamp(15px, calc(var(--vw, 1vw) * 4.2), 22px); background: var(--panel-solid); color: var(--ink); border: 2px solid var(--line); box-shadow: var(--shadow); }
 #toast.show { opacity: 1; transform: translate(-50%, -50%); }
 #toast.win { border-color: var(--win); color: var(--win); }
 #toast.post { border-color: var(--brass); color: var(--brass); }
@@ -112,7 +154,7 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 
 /* ---------- console (the action area) ---------- */
 .console { container-type: size; display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 14px; overflow: hidden; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: var(--shadow); }
-.c-title { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 5.6vw, 26px); line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-title { font-family: var(--display); font-weight: 800; font-size: clamp(20px, calc(var(--vw, 1vw) * 5.6), 26px); line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .c-sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
 .c-fill { flex: 1; min-height: 0; }
 .btn { min-height: 46px; padding: 8px 16px; border-radius: 12px; font-weight: 600; background: var(--panel2); border: 1px solid var(--line); color: var(--ink); }
@@ -170,18 +212,18 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 /* ---------- setup ---------- */
 .setup { position: absolute; inset: 0; display: grid; gap: 10px; grid-template-rows: auto minmax(0, 1fr) auto; padding: 14px; max-width: 560px; margin: 0 auto; }
 .hero { display: grid; justify-items: center; gap: 4px; padding-top: 2px; }
-.fan { position: relative; height: clamp(70px, 17dvh, 132px); width: 100%; perspective: 700px; }
-.fan .pc { --cw: clamp(40px, 9dvh, 76px); position: absolute; left: 50%; top: 50%; transform-origin: 50% 90%; }
+.fan { position: relative; height: clamp(70px, calc(var(--vh, 1vh) * 17), 132px); width: 100%; perspective: 700px; }
+.fan .pc { --cw: clamp(40px, calc(var(--vh, 1vh) * 9), 76px); position: absolute; left: 50%; top: 50%; transform-origin: 50% 90%; }
 .fan .pc:nth-child(1) { transform: translate(-50%, -50%) translateX(calc(var(--cw) * -.85)) rotateZ(-14deg) rotateX(16deg); }
 .fan .pc:nth-child(2) { transform: translate(-50%, -50%) translateY(calc(var(--cw) * -.1)) rotateX(16deg); background: repeating-linear-gradient(45deg, #9e2b25 0 7px, #7e211c 7px 14px); box-shadow: inset 0 0 0 3px #f2eddc, 0 8px 16px rgba(0,0,0,.4); }
 .fan .pc:nth-child(3) { transform: translate(-50%, -50%) translateX(calc(var(--cw) * .85)) rotateZ(14deg) rotateX(16deg); }
-.hero h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 8.5vw, 52px); line-height: 1; letter-spacing: -.01em; }
+.hero h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, calc(var(--vw, 1vw) * 8.5), 52px); line-height: 1; letter-spacing: -.01em; }
 .hero p { color: var(--muted); font-size: 15px; text-align: center; }
 .sform { display: grid; gap: 10px; min-height: 0; align-content: start; }
 .lbl span { white-space: nowrap; }
 .lbl { font-weight: 600; font-size: 13px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
 .pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.pchip { display: flex; align-items: center; gap: 2px; height: clamp(32px, 5.4dvh, 42px); padding: 0 2px 0 10px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); min-width: 0; }
+.pchip { display: flex; align-items: center; gap: 2px; height: clamp(32px, calc(var(--vh, 1vh) * 5.4), 42px); padding: 0 2px 0 10px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); min-width: 0; }
 .pchip input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; outline-offset: 0; font-weight: 600; font-size: 15px; }
 .pchip .x { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 8px; color: var(--muted); }
 .pchip.add { justify-content: center; padding: 0 10px; border-style: dashed; font-weight: 600; color: var(--muted); background: transparent; }
@@ -193,20 +235,25 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 .pgmini button { min-width: 30px; height: 26px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); font-size: 16px; line-height: 1; padding: 0; }
 .pgmini button:disabled { opacity: .35; }
 #setupErr:empty { display: none; }
-@media (max-height: 660px) { .hero p { display: none; } .fan { height: 62px; } .sform { gap: 8px; } .seg button { min-height: 38px; } .setup .stepper .btn, .setup .bet-input { min-height: 40px; } }
-@media (max-height: 540px) { .fan { display: none; } .setup { gap: 6px; padding: 10px 14px; } .hero h1 { font-size: 28px; } }
-@media (min-aspect-ratio: 6/5) {
-  .setup { max-width: 920px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-rows: minmax(0, 1fr) auto; column-gap: 24px; align-items: center; }
-  .hero { grid-row: 1; align-self: center; }
-  .fan { height: clamp(90px, 28dvh, 190px); }
-  .sform { grid-row: 1; grid-column: 2; align-self: center; }
-  .setup > .linkbtn { grid-row: 2; grid-column: 1 / -1; }
-}
+html.short .hero p { display: none; }
+html.short .fan { height: 62px; }
+html.short .sform { gap: 8px; }
+html.short .seg button { min-height: 38px; }
+html.short .setup .stepper .btn, html.short .setup .bet-input { min-height: 40px; }
+html.xshort .fan { display: none; }
+html.xshort .setup { gap: 6px; padding: 10px 14px; }
+html.xshort .hero h1 { font-size: 28px; }
+html.land .setup { max-width: 920px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-rows: minmax(0, 1fr) auto; column-gap: 24px; align-items: center; }
+html.land .hero { grid-row: 1; align-self: center; }
+html.land .fan { height: clamp(90px, calc(var(--vh, 1vh) * 28), 190px); }
+html.land .sform { grid-row: 1; grid-column: 2; align-self: center; }
+html.land .setup > .linkbtn { grid-row: 2; grid-column: 1 / -1; }
 
 /* ---------- menu sheet ---------- */
 .sheet { position: fixed; inset: 0; z-index: 30; display: grid; place-items: end center; background: rgba(2, 8, 5, .62); }
-.sheet-card { width: min(600px, 100%); height: 78vh; height: min(78dvh, 640px); display: flex; flex-direction: column; overflow: hidden; border-radius: 22px 22px 0 0; background: var(--panel-solid); border: 1px solid var(--line); box-shadow: var(--shadow); padding-bottom: env(safe-area-inset-bottom, 0px); }
-@media (min-aspect-ratio: 6/5) { .sheet { place-items: center; } .sheet-card { border-radius: 22px; height: 88vh; height: min(88dvh, 560px); } }
+.sheet-card { width: min(600px, 100%); height: calc(var(--vh, 1vh) * 78); height: min(calc(var(--vh, 1vh) * 78), 640px); display: flex; flex-direction: column; overflow: hidden; border-radius: 22px 22px 0 0; background: var(--panel-solid); border: 1px solid var(--line); box-shadow: var(--shadow); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html.land .sheet { place-items: center; }
+html.land .sheet-card { border-radius: 22px; height: calc(var(--vh, 1vh) * 88); height: min(calc(var(--vh, 1vh) * 88), 560px); }
 .sheet-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px 6px 16px; }
 .sheet-head h2 { font-family: var(--display); font-weight: 800; font-size: 22px; flex: 1; }
 .sheet-head .ibtn { box-shadow: none; }
@@ -246,7 +293,7 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 .joinrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .lobby { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding: 14px; max-width: 560px; margin: 0 auto; }
 .lobhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
-.roomcode { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 9vw, 48px); letter-spacing: .12em; line-height: 1; user-select: text; -webkit-user-select: text; }
+.roomcode { font-family: var(--display); font-weight: 800; font-size: clamp(34px, calc(var(--vw, 1vw) * 9), 48px); letter-spacing: .12em; line-height: 1; user-select: text; -webkit-user-select: text; }
 .lobhead { flex-direction: column; align-items: stretch; }
 .coderow, .linkrow { display: flex; align-items: center; gap: 8px; }
 .coderow { justify-content: space-between; }
@@ -270,32 +317,24 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 .timer { font-variant-numeric: tabular-nums; font-weight: 700; }
 .timer.low { color: var(--lose); }
 .lobnote:empty { display: none; }
-@media (min-aspect-ratio: 6/5) {
-  .lobby { max-width: 920px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); grid-template-rows: auto auto; column-gap: 24px; align-content: center; }
-  .lobhead { grid-area: 1 / 1; }
-  .lobby > .sform { grid-area: 1 / 2 / 3 / 3; align-self: center; }
-  .lobfoot { grid-area: 2 / 1; align-self: start; }
-}
+html.land .lobby { max-width: 920px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); grid-template-rows: auto auto; column-gap: 24px; align-content: center; }
+html.land .lobhead { grid-area: 1 / 1; }
+html.land .lobby > .sform { grid-area: 1 / 2 / 3 / 3; align-self: center; }
+html.land .lobfoot { grid-area: 2 / 1; align-self: start; }
 /* ---------- fit and centre on every landscape screen ---------- */
-.view { inset: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
+.view { inset: var(--sat) var(--sar) var(--sab) var(--sal); }
 #gameView { max-width: 1700px; margin-inline: auto; }
 #main { align-content: center; }
-@media (max-height: 430px) {
-  .setup { padding: 8px 14px; gap: 6px; }
-  .setup .seg button, .setup .btn { min-height: 36px; }
-  .setup .stepper .btn, .setup .bet-input { min-height: 36px; font-size: 22px; }
-  .setup .sform { gap: 6px; }
-  .setup .btn.primary { min-height: 42px; font-size: 16px; }
-  .setup .lbl { font-size: 12px; }
-  .lobby { padding: 8px 14px; gap: 6px; }
-  .hud { padding: 6px 10px 4px; }
-  .ibtn { width: 40px; height: 40px; }
-}
-/* ---------- landscape only ---------- */
-.rotate { position: fixed; inset: 0; z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; background: #07140e; color: #f2f7f3; }
-.rotate svg { width: 72px; height: 72px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; animation: rot 2.4s ease-in-out infinite; }
-.rotate b { font-family: var(--display); font-size: 22px; }
-.rotate span { font-size: 15px; opacity: .8; max-width: 28ch; }
+html.xxshort .setup { padding: 8px 14px; gap: 6px; }
+html.xxshort .setup .seg button, html.xxshort .setup .btn { min-height: 36px; }
+html.xxshort .setup .stepper .btn, html.xxshort .setup .bet-input { min-height: 36px; font-size: 22px; }
+html.xxshort .setup .sform { gap: 6px; }
+html.xxshort .setup .btn.primary { min-height: 42px; font-size: 16px; }
+html.xxshort .setup .lbl { font-size: 12px; }
+html.xxshort .lobby { padding: 8px 14px; gap: 6px; }
+html.xxshort .hud { padding: 6px 10px 4px; }
+html.xxshort .ibtn { width: 40px; height: 40px; }
+/* ---------- install prompt ---------- */
 .install { position: fixed; inset: 0; z-index: 9000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(4, 12, 8, .72); }
 .install.show { display: flex; }
 .install .card { width: min(380px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 22px 20px 18px; text-align: center; border-radius: 20px; background: #0b2a1c; color: #f2f7f3; border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
@@ -306,9 +345,31 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 .install .acts { display: flex; gap: 8px; width: 100%; }
 .install .acts button { flex: 1; min-height: 46px; border-radius: 12px; font-weight: 700; border: 1px solid rgba(255, 255, 255, .22); background: transparent; color: inherit; }
 .install .acts .go { background: #e8c15c; border-color: #e8c15c; color: #1a1a10; }
-@keyframes rot { 0%, 25% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
-@media (prefers-reduced-motion: reduce) { .rotate svg { animation: none; } }
-@media (orientation: portrait) and (pointer: coarse) { .rotate { display: flex; } }
+/* ---------- game screen: the table fills the screen, the controls float on top ---------- */
+html.land { --conw: clamp(206px, calc(var(--vw, 1vw) * 27), 300px); --hudh: 56px; }
+html.land.short { --hudh: 50px; }
+html.land #gameView { display: block; max-width: none; margin: 0; }
+html.land #main { position: absolute; inset: 0; display: block; padding: 0; }
+html.land #stageWrap { position: absolute; inset: 0; aspect-ratio: auto; height: auto; max-height: none; }
+html.land .hud { position: absolute; z-index: 5; top: 0; left: 0; right: 0; padding: 6px 8px 0; pointer-events: none; height: var(--hudh); }
+html.land .hud > * { pointer-events: auto; }
+html.land .hud > .spacer { pointer-events: none; }
+html.land #console { position: absolute; z-index: 4; top: var(--hudh); right: 8px; bottom: 8px; width: var(--conw); padding: 12px; gap: 8px; }
+html.land #zoom, html.land #toast { left: calc((100% - var(--conw) - 8px) / 2); }
+html.land .console .hand3d.big { display: none; }
+html.land .console .c-title { font-size: clamp(17px, calc(var(--vw, 1vw) * 2.4), 24px); }
+html.land .console .c-sub { font-size: 13px; }
+html.land .console .quick .btn { padding-left: 4px; padding-right: 4px; font-size: 13px; }
+html.land .console .btn.primary { font-size: 15px; padding-left: 6px; padding-right: 6px; }
+html.land .console .row .btn:not(.primary) { padding-left: 6px; padding-right: 6px; }
+html.land.short .console .btn { min-height: 40px; }
+html.land.short .console .btn.small { min-height: 34px; }
+html.land.short .console .stepper { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+html.land.short .console .bet-input { min-height: 40px; font-size: 24px; }
+html.land.short .ibtn { width: 40px; height: 40px; }
+html.land.short .bank .chip { width: 32px; height: 32px; }
+html.land.short .bank strong { font-size: 22px; }
+html.land.short .pill { padding: 2px 8px; min-width: 44px; }
 </style>
 </head>
 <body>
@@ -319,7 +380,6 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
   <ol id="installSteps" hidden><li>Tap the <b>Share</b> button in Safari.</li><li>Choose <b>Add to Home Screen</b>.</li><li>Open <b>In-Between</b> from your home screen.</li></ol>
   <div class="acts"><button type="button" id="installLater">Not now</button><button type="button" class="go" id="installGo">Install</button></div>
 </div></div>
-<div class="rotate" id="rotateHint" role="alert"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg><b>Turn your phone sideways</b><span>In-Between is played in landscape.</span></div>
 <div id="app">
   <div id="setupView" class="view"></div>
   <div id="lobbyView" class="view" hidden></div>
@@ -1050,8 +1110,9 @@ import * as E from "./js/engine.js";
 
   /* ---------- rendering: home ---------- */
   function setupPerPage() {
-    var k = window.innerWidth > window.innerHeight ? "l" : "p";
-    maxH[k] = Math.max(maxH[k] || 0, window.innerHeight);   /* the on-screen keyboard only shrinks the height, so use the largest seen */
+    var fit = (document.documentElement.dataset.fit || "").split("x"), W = +fit[0] || window.innerWidth, H = +fit[1] || window.innerHeight;
+    var k = W > H ? "l" : "p";
+    maxH[k] = Math.max(maxH[k] || 0, H);   /* the on-screen keyboard only shrinks the height, so use the largest seen */
     var h = maxH[k], rows = h < 480 ? 2 : h < 700 ? 3 : 5;
     return rows * 2;
   }
@@ -1845,9 +1906,9 @@ import * as E from "./js/engine.js";
     }
 
     /* ----- fixed camera that fits the whole table ----- */
-    var w = 0, h = 0;
+    var w = 0, h = 0, reserve = 0;
     function fitCamera() {
-      var tanV = Math.tan(18 * Math.PI / 180), tanH = tanV * camera.aspect;
+      var tanV = Math.tan(18 * Math.PI / 180), tanH = tanV * Math.max(0.2, (w - reserve) / h);
       var el = 62 * Math.PI / 180, sinE = Math.sin(el), cosE = Math.cos(el);
       var dist = Math.max((TX + 0.3) / tanH, (TZ * sinE + 0.9 * cosE + 0.5) / tanV) * 1.04;
       camera.position.set(0, dist * sinE, dist * cosE);
@@ -1855,10 +1916,12 @@ import * as E from "./js/engine.js";
     }
     function resize() {
       var cw = container.clientWidth, ch = container.clientHeight;
-      if (!cw || !ch || (cw === w && ch === h)) return;
-      w = cw; h = ch;
+      var cons = document.getElementById("console"), rs = (cons && cons.offsetParent && document.documentElement.classList.contains("land")) ? cons.offsetWidth + 14 : 0;
+      if (!cw || !ch || (cw === w && ch === h && rs === reserve)) return;
+      w = cw; h = ch; reserve = rs;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
+      if (reserve) camera.setViewOffset(w, h, reserve / 2, 0, w, h); else camera.clearViewOffset();
       camera.updateProjectionMatrix();
       fitCamera();
     }
@@ -1870,8 +1933,10 @@ import * as E from "./js/engine.js";
       if (!downAt || !layout) return;
       var dx = e.clientX - downAt.x, dy = e.clientY - downAt.y; downAt = null;
       if (dx * dx + dy * dy > 100) return;
-      var r = renderer.domElement.getBoundingClientRect();
-      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      var r = renderer.domElement.getBoundingClientRect(), lx, ly, rw, rh;
+      if (document.documentElement.classList.contains("rot")) { lx = r.bottom - e.clientY; ly = e.clientX - r.left; rw = r.height; rh = r.width; }
+      else { lx = e.clientX - r.left; ly = e.clientY - r.top; rw = r.width; rh = r.height; }
+      ndc.set((lx / rw) * 2 - 1, -(ly / rh) * 2 + 1);
       ray.setFromCamera(ndc, camera);
       var objs = [];
       Object.keys(labels).forEach(function (k) { if (labels[k].visible) objs.push(labels[k]); });
