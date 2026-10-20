@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07140e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="In-Between">
 <title>In-Between: the card game</title>
 <meta name="description" content="In-Between, the card game of betting on the card in the middle. Play on one screen or online with friends.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -269,9 +276,18 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
   .lobby > .sform { grid-area: 1 / 2 / 3 / 3; align-self: center; }
   .lobfoot { grid-area: 2 / 1; align-self: start; }
 }
+/* ---------- landscape only ---------- */
+.rotate { position: fixed; inset: 0; z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; background: #07140e; color: #f2f7f3; }
+.rotate svg { width: 72px; height: 72px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; animation: rot 2.4s ease-in-out infinite; }
+.rotate b { font-family: var(--display); font-size: 22px; }
+.rotate span { font-size: 15px; opacity: .8; max-width: 28ch; }
+@keyframes rot { 0%, 25% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) { .rotate svg { animation: none; } }
+@media (orientation: portrait) and (pointer: coarse) { .rotate { display: flex; } }
 </style>
 </head>
 <body>
+<div class="rotate" id="rotateHint" role="alert"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg><b>Turn your phone sideways</b><span>In-Between is played in landscape.</span></div>
 <div id="app">
   <div id="setupView" class="view"></div>
   <div id="lobbyView" class="view" hidden></div>
@@ -290,6 +306,33 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 <div id="sheet" class="sheet" hidden></div>
 <div id="live" class="sr" aria-live="polite"></div>
 
+<script>
+/* Full screen and landscape: the browser only allows this after a tap, so ask on the first one. */
+(function () {
+  var root = document.documentElement, coarse = matchMedia("(pointer: coarse)").matches, asked = false;
+  function standalone() { return matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches || navigator.standalone === true; }
+  function lockLandscape() {
+    try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(function () {}); } catch (e) {}
+  }
+  function goFull() {
+    if (document.fullscreenElement || standalone()) { lockLandscape(); return; }
+    var req = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (!req || document.fullscreenEnabled === false) return;
+    try {
+      var p = req.call(root, { navigationUI: "hide" });
+      if (p && p.then) p.then(lockLandscape, function () {}); else lockLandscape();
+    } catch (e) {}
+  }
+  lockLandscape();
+  addEventListener("pointerup", function (ev) {
+    if (ev.target.closest && ev.target.closest("input, textarea")) return;
+    if (coarse || !asked) { asked = true; goFull(); }
+  }, { capture: true });
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+  }
+})();
+</script>
 <script src="vendor/three.min.js"></script>
 <script src="config.js"></script>
 <script type="module">
