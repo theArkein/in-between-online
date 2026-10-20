@@ -356,7 +356,6 @@ html.land .hud > * { pointer-events: auto; }
 html.land .hud > .spacer { pointer-events: none; }
 html.land #console { position: absolute; z-index: 4; top: var(--hudh); right: 8px; bottom: 8px; width: var(--conw); padding: 12px; gap: 8px; }
 html.land #zoom, html.land #toast { left: calc((100% - var(--conw) - 8px) / 2); }
-html.land .console .hand3d.big { display: none; }
 html.land .console .c-title { font-size: clamp(17px, calc(var(--vw, 1vw) * 2.4), 24px); }
 html.land .console .c-sub { font-size: 13px; }
 html.land .console .quick .btn { padding-left: 4px; padding-right: 4px; font-size: 13px; }
@@ -1910,7 +1909,7 @@ import * as E from "./js/engine.js";
     function fitCamera() {
       var tanV = Math.tan(18 * Math.PI / 180), tanH = tanV * Math.max(0.2, (w - reserve) / h);
       var el = 62 * Math.PI / 180, sinE = Math.sin(el), cosE = Math.cos(el);
-      var dist = Math.max((TX + 0.3) / tanH, (TZ * sinE + 0.9 * cosE + 0.5) / tanV) * 1.04;
+      var dist = Math.max((TX + 0.75) / tanH, (TZ * sinE + 0.9 * cosE + 0.5) / tanV) * 1.04;
       camera.position.set(0, dist * sinE, dist * cosE);
       camera.lookAt(0, -0.1, 0);
     }
