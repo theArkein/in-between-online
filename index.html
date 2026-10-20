@@ -281,12 +281,29 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
 .rotate svg { width: 72px; height: 72px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; animation: rot 2.4s ease-in-out infinite; }
 .rotate b { font-family: var(--display); font-size: 22px; }
 .rotate span { font-size: 15px; opacity: .8; max-width: 28ch; }
+.install { position: fixed; inset: 0; z-index: 9000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(4, 12, 8, .72); }
+.install.show { display: flex; }
+.install .card { width: min(380px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 22px 20px 18px; text-align: center; border-radius: 20px; background: #0b2a1c; color: #f2f7f3; border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 18px 50px rgba(0, 0, 0, .55); }
+.install img { width: 72px; height: 72px; border-radius: 16px; }
+.install b { font-family: var(--display); font-size: 22px; }
+.install p { font-size: 15px; opacity: .85; }
+.install ol { margin: 0; padding-left: 20px; text-align: left; font-size: 15px; display: grid; gap: 6px; }
+.install .acts { display: flex; gap: 8px; width: 100%; }
+.install .acts button { flex: 1; min-height: 46px; border-radius: 12px; font-weight: 700; border: 1px solid rgba(255, 255, 255, .22); background: transparent; color: inherit; }
+.install .acts .go { background: #e8c15c; border-color: #e8c15c; color: #1a1a10; }
 @keyframes rot { 0%, 25% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
 @media (prefers-reduced-motion: reduce) { .rotate svg { animation: none; } }
 @media (orientation: portrait) and (pointer: coarse) { .rotate { display: flex; } }
 </style>
 </head>
 <body>
+<div class="install" id="installPrompt" role="dialog" aria-modal="true" aria-labelledby="installTitle"><div class="card">
+  <img src="icons/icon-192.png" alt="" width="72" height="72">
+  <b id="installTitle">Install In-Between</b>
+  <p id="installText">Play full screen, in landscape, straight from your home screen. It also opens without a connection.</p>
+  <ol id="installSteps" hidden><li>Tap the <b>Share</b> button in Safari.</li><li>Choose <b>Add to Home Screen</b>.</li><li>Open <b>In-Between</b> from your home screen.</li></ol>
+  <div class="acts"><button type="button" id="installLater">Not now</button><button type="button" class="go" id="installGo">Install</button></div>
+</div></div>
 <div class="rotate" id="rotateHint" role="alert"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg><b>Turn your phone sideways</b><span>In-Between is played in landscape.</span></div>
 <div id="app">
   <div id="setupView" class="view"></div>
@@ -325,9 +342,32 @@ svg.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-wid
   }
   lockLandscape();
   addEventListener("pointerup", function (ev) {
-    if (ev.target.closest && ev.target.closest("input, textarea")) return;
+    if (ev.target.closest && ev.target.closest("input, textarea, #installPrompt")) return;
     if (coarse || !asked) { asked = true; goFull(); }
   }, { capture: true });
+
+  /* Install prompt: native on Android and desktop, step-by-step on iPhone and iPad. */
+  var KEY = "inbetween-install-dismissed", WEEK = 7 * 864e5, deferred = null;
+  var box = document.getElementById("installPrompt");
+  function recentlyDismissed() { try { return Date.now() - Number(localStorage.getItem(KEY) || 0) < WEEK; } catch (e) { return false; } }
+  function hide(remember) { box.classList.remove("show"); if (remember) { try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {} } }
+  function show(ios) {
+    if (standalone() || recentlyDismissed()) return;
+    document.getElementById("installSteps").hidden = !ios;
+    document.getElementById("installGo").hidden = ios;
+    document.getElementById("installLater").textContent = ios ? "Got it" : "Not now";
+    box.classList.add("show");
+  }
+  addEventListener("beforeinstallprompt", function (ev) { ev.preventDefault(); deferred = ev; setTimeout(function () { show(false); }, 1500); });
+  addEventListener("appinstalled", function () { deferred = null; hide(false); });
+  document.getElementById("installLater").addEventListener("click", function () { hide(true); });
+  document.getElementById("installGo").addEventListener("click", function () {
+    if (!deferred) { hide(false); return; }
+    var d = deferred; deferred = null; hide(false);
+    d.prompt(); d.userChoice.then(function (c) { if (c.outcome !== "accepted") hide(true); });
+  });
+  var iosSafari = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (iosSafari && !standalone()) setTimeout(function () { show(true); }, 2500);
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
   }
