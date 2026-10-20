@@ -1,0 +1,18 @@
+# Cloudflare deployment for the In-Between room server.
+#   cd server && npm install && npx wrangler deploy
+name = "in-between-rooms"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+# Which websites may create rooms and connect. Use your GitHub Pages address.
+# Use "*" only while testing.
+ALLOWED_ORIGINS = "https://inbetween.saradsingh.com.np"
+
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]

@@ -1,0 +1,15 @@
+{
+  "name": "in-between",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "In-Between card game: single-screen and online play",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "dev:web": "python3 -m http.server 8080",
+    "dev:server": "node server/src/node.js"
+  },
+  "devDependencies": {
+    "ws": "^8.18.0"
+  }
+}
